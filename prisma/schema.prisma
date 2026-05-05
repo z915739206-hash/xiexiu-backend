@@ -1,0 +1,133 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String
+  name          String?
+  avatar        String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  ingredients   Ingredient[]
+  shoppingItems ShoppingItem[]
+  recipeSaves   SavedRecipe[]
+  
+  @@map("users")
+}
+
+model Ingredient {
+  id          String   @id @default(uuid())
+  userId      String
+  nameEn      String
+  nameZh      String
+  emoji       String   @default("🍅")
+  color       String   @default("#FF6B5B")
+  category    String   // veg | meat | dairy | pantry
+  location    String   // Fridge | Freezer | Pantry
+  qty         String
+  expiryDate  DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("ingredients")
+}
+
+model Recipe {
+  id            String    @id @default(uuid())
+  nameEn        String
+  nameZh        String
+  namePinyin    String
+  category      String
+  imageUrl      String?
+  imageGradient String
+  emoji         String
+  speed         Int
+  cleanPan      Int
+  foolproof     Int
+  minutes       Int
+  description   String
+  isPremium     Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  
+  tricks        RecipeTrick[]
+  steps         RecipeStep[]
+  uses          RecipeIngredient[]
+  saves         SavedRecipe[]
+  
+  @@map("recipes")
+}
+
+model RecipeTrick {
+  id        String @id @default(uuid())
+  recipeId  String
+  icon      String
+  text      String
+  
+  recipe    Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  
+  @@map("recipe_tricks")
+}
+
+model RecipeStep {
+  id        String @id @default(uuid())
+  recipeId  String
+  order     Int
+  title     String
+  body      String
+  sneaky    String?
+  
+  recipe    Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  
+  @@map("recipe_steps")
+}
+
+model RecipeIngredient {
+  id            String @id @default(uuid())
+  recipeId      String
+  ingredientId  String // 对应 Ingredient 的 nameEn 或自定义ID
+  nameEn        String
+  nameZh        String
+  emoji         String
+  
+  recipe        Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  
+  @@map("recipe_ingredients")
+}
+
+model SavedRecipe {
+  id        String   @id @default(uuid())
+  userId    String
+  recipeId  String
+  createdAt DateTime @default(now())
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, recipeId])
+  @@map("saved_recipes")
+}
+
+model ShoppingItem {
+  id        String   @id @default(uuid())
+  userId    String
+  name      String
+  qty       String
+  checked   Boolean  @default(false)
+  source    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("shopping_items")
+}
